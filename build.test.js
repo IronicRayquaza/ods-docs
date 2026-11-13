@@ -54,6 +54,8 @@ test('build writes pages, a pinned search index, the catalog and the home page',
   assert.strictEqual(r.build.sha, sha);
   assert.ok(fs.existsSync(path.join(out, 'docs', 'quickstart.html')));
   assert.ok(fs.existsSync(path.join(out, 'fonts', 'inter-latin.woff2')));
+  assert.ok(fs.existsSync(path.join(out, 'favicon.png')) && fs.existsSync(path.join(out, 'apple-touch-icon.png')));
+  assert.ok(fs.readFileSync(path.join(out, 'docs', 'quickstart.html'), 'utf8').includes('<link rel="icon" type="image/png" sizes="64x64" href="../favicon.png">'));
 
   const win = fs.readFileSync(path.join(out, 'docs', 'windows-quickstart.html'), 'utf8');
   assert.ok(win.includes('<a href="../docs/quickstart.html#install">the quickstart</a>'));

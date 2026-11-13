@@ -24,7 +24,7 @@ const { RECIPES } = require('./recipes.js');
 
 const RAW = 'https://raw.githubusercontent.com/Osmantic/ODS/';
 const BLOB = 'https://github.com/Osmantic/ODS/blob/';
-const STATIC = ['style.css', 'ods-logo.png', '.nojekyll', 'search.js', 'platform.js', 'snippet.js', 'recipes.js', 'render.js', 'logsplit.js', 'app.js', 'check.js'];
+const STATIC = ['style.css', 'ods-logo.png', 'favicon.png', 'apple-touch-icon.png', '.nojekyll', 'search.js', 'platform.js', 'snippet.js', 'recipes.js', 'render.js', 'logsplit.js', 'app.js', 'check.js'];
 
 function walk(dir) {
   const found = [];

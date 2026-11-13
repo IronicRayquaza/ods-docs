@@ -20,7 +20,8 @@ function head(title, description, prefix) {
     + '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
     + '<title>' + esc(title) + '</title>\n'
     + (description ? '<meta name="description" content="' + esc(description) + '">\n' : '')
-    + '<link rel="icon" href="' + prefix + 'ods-logo.png">\n'
+    + '<link rel="icon" type="image/png" sizes="64x64" href="' + prefix + 'favicon.png">\n'
+    + '<link rel="apple-touch-icon" href="' + prefix + 'apple-touch-icon.png">\n'
     + '<link rel="stylesheet" href="' + prefix + 'style.css">\n'
     + '</head>\n';
 }
