@@ -46,7 +46,7 @@ test('build writes pages, a pinned search index, the catalog and the home page',
   const recipeFiles = [...new Set(require('./recipes.js').RECIPES.flatMap(r => r.files))];
   const root = fixture(recipeFiles);
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'ods-docs-out-'));
-  const r = build(root, out);
+  const r = build(root, out, { checker: false });
   const sha = execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 
   assert.strictEqual(r.build.sha, sha);
@@ -77,5 +77,5 @@ test('build writes pages, a pinned search index, the catalog and the home page',
 test('build stops when a recipe points at a doc that is gone', () => {
   const root = fixture([]);
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'ods-docs-out-'));
-  assert.throws(() => build(root, out), /Fix recipes\.js/);
+  assert.throws(() => build(root, out, { checker: false }), /Fix recipes\.js/);
 });

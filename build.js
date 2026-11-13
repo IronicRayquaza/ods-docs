@@ -15,13 +15,15 @@ const { shouldInclude, isErrorSource } = require('./include.js');
 const { errorChunks } = require('./errors.js');
 const { buildCatalog, groupByCategory } = require('./catalog.js');
 const { renderMarkdown } = require('./markdown.js');
-const { docPage, homePage } = require('./pages.js');
+const { docPage, homePage, checkPage, DISCORD } = require('./pages.js');
+const { KINDS, OSES, supportRowFor, isComputed, parseSupportMatrix } = require('./checker.js');
+const { askOds } = require('./oracle.js');
 const { platformOf } = require('./platform.js');
 const { RECIPES } = require('./recipes.js');
 
 const RAW = 'https://raw.githubusercontent.com/Osmantic/ODS/';
 const BLOB = 'https://github.com/Osmantic/ODS/blob/';
-const STATIC = ['style.css', 'ods-logo.png', '.nojekyll', 'search.js', 'platform.js', 'snippet.js', 'recipes.js', 'render.js', 'logsplit.js', 'app.js'];
+const STATIC = ['style.css', 'ods-logo.png', '.nojekyll', 'search.js', 'platform.js', 'snippet.js', 'recipes.js', 'render.js', 'logsplit.js', 'app.js', 'check.js'];
 
 function walk(dir) {
   const found = [];
@@ -83,7 +85,7 @@ function startSection(text) {
   return m[1];
 }
 
-function build(root, out) {
+function build(root, out, options = {}) {
   const build = buildInfo(root);
   const files = walk(root).map(f => path.relative(root, f).split(path.sep).join('/')).sort();
   const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
@@ -141,14 +143,46 @@ function build(root, out) {
 
   fs.writeFileSync(path.join(out, 'catalog.json'), JSON.stringify({ source: { repo: 'Osmantic/ODS', sha: build.sha, date: build.date }, categories: groups.map(g => ({ id: g.id, title: g.title, description: g.description })), docs: catalog }, null, 1) + '\n');
 
+  const checker = options.checker !== false ? writeChecker(root, out, build, groups, slugs, read, catalog) : null;
+  const example = checker && checker.results['windows|nvidia|8|16'];
+
   const startText = startSection(read('ods/docs/README.md'));
   const start = renderMarkdown(startText, { resolve: makeResolver('ods/docs/README.md', slugs, build.sha, ''), titleFor: makeTitles('ods/docs/README.md', catalog) });
-  fs.writeFileSync(path.join(out, 'index.html'), homePage({ groups: groups, build: build, startHtml: start.html, count: catalog.length }));
+  fs.writeFileSync(path.join(out, 'index.html'), homePage({ groups: groups, build: build, startHtml: start.html, count: catalog.length, example: example ? { machine: 'Windows, NVIDIA 8 GB, 16 GB RAM', model: example.model.name, context: example.model.context, sizeMb: example.model.sizeMb } : null }));
+
 
   for (const f of STATIC) fs.copyFileSync(path.join(__dirname, f), path.join(out, f));
   fs.cpSync(path.join(__dirname, 'fonts'), path.join(out, 'fonts'), { recursive: true });
 
   return { pages: catalog.length, sections: chunks.length, errors: errorCount, build: build };
+}
+
+// "Will ODS run on my machine?": ODS's own answers for every machine on the
+// page (oracle.js), the support-matrix rows that cover them, and the page.
+function writeChecker(root, out, build, groups, slugs, read, catalog) {
+  const matrixPath = 'ods/docs/SUPPORT-MATRIX.md';
+  const rows = parseSupportMatrix(read(matrixPath));
+  const support = {};
+  const supportRows = {};
+  const computed = {};
+  for (const k of KINDS) {
+    for (const os of k.os) {
+      const name = supportRowFor(os, k.id);
+      computed[os + '|' + k.id] = isComputed(os, k.id);
+      if (!name) continue;
+      if (!rows[name]) throw new Error('SUPPORT-MATRIX.md has no "' + name + '" row any more; update supportRowFor() in checker.js');
+      supportRows[os + '|' + k.id] = name;
+      const details = renderMarkdown(rows[name].details, { resolve: makeResolver(matrixPath, slugs, build.sha, ''), titleFor: makeTitles(matrixPath, catalog) }).html.replace(/^<p>|<\/p>$/g, '');
+      support[name] = { status: rows[name].status, detailsHtml: details };
+    }
+  }
+  for (const slug of ['windows-quickstart', 'macos-quickstart', 'quickstart', 'intel-arc-guide', 'support-matrix']) {
+    if (![...slugs.values()].includes(slug)) throw new Error('The checker links to docs/' + slug + '.html, which no longer exists; update check.js');
+  }
+  const data = { build: build, discord: DISCORD, oses: OSES, kinds: KINDS, support: support, supportRows: supportRows, computed: computed, results: askOds(root) };
+  fs.writeFileSync(path.join(out, 'checker-data.js'), 'const CHECKER = ' + JSON.stringify(data) + ';\nif (typeof module !== "undefined") { module.exports = { CHECKER }; }\n');
+  fs.writeFileSync(path.join(out, 'check.html'), checkPage({ groups: groups, build: build }));
+  return data;
 }
 
 if (require.main === module) {

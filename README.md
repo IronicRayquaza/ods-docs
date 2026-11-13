@@ -8,6 +8,7 @@ ODS ships more than 150 guides, but they only live as Markdown files in the repo
 
 ## What it does
 
+- **Will ODS run on my machine?** ([check.html](https://ironicrayquaza.github.io/ods-docs/check.html)): pick your system, graphics and memory, and see the model ODS would install, the disk it needs, and anything that would stop it. The answers aren't written by hand: the build runs ODS's own `classify-hardware.sh`, `select-model.py` and `preflight-engine.sh` (and the macOS installer's tier and chip checks) for every machine on the page, and quotes the support matrix.
 - **Read:** every ODS guide as a page, grouped into sections (Getting Started, Platform & Hardware, Operations & Runbooks, …), with an "On this page" list and previous/next links. Links between guides stay on the site.
 - **Search:** plain questions ("switch model", "where are the logs") open the matching section of the right page.
 - **Paste an error or a whole log:** a red **Where this error comes from** card shows the ODS script and line that printed it, with the docs that fix it underneath.
@@ -24,7 +25,7 @@ Nothing on the site is generated or rewritten. The pages are the ODS docs as wri
 
 ## Run it locally
 
-Node 18 or newer, no dependencies.
+Node 18 or newer and Python 3 (for the ODS scripts the checker runs), no dependencies. `ODS_SOURCE=ods-source npm test` also runs the checker against the real ODS code.
 
 ```
 npm test
@@ -48,6 +49,7 @@ The build also writes `catalog.json`: every guide's page name, repo path, title,
 | `chunk.js`, `include.js`, `errors.js` | Split guides into search sections, choose files, find error messages in scripts |
 | `search.js`, `logsplit.js`, `platform.js` | Ranking, exact error matching, picking error lines from pasted logs, platform tags |
 | `app.js`, `render.js`, `snippet.js`, `recipes.js` | The search page in the browser |
+| `checker.js`, `oracle.js`, `select_batch.py`, `check.js` | "Will ODS run on my machine?": the machines on the page, running ODS's scripts for them at build time, and the page in the browser |
 | `*.test.js` | Tests (`npm test`) |
 
 ## Credits and license

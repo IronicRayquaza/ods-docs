@@ -30,11 +30,18 @@ jobs:
         with:
           node-version: 22
 
-      - name: Run the tests
-        run: npm test
+      # The "Will it run?" page runs ODS's own Python and Bash installer code.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Get the latest ODS
         run: git clone --depth 1 https://github.com/Osmantic/ODS "$RUNNER_TEMP/ods-source"
+
+      - name: Run the tests
+        run: npm test
+        env:
+          ODS_SOURCE: ${{ runner.temp }}/ods-source
 
       - name: Build the site
         run: node build.js "$RUNNER_TEMP/ods-source" _site

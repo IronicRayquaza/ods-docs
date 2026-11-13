@@ -32,7 +32,7 @@ function topBar(prefix, query) {
     + '<form class="top-search" action="' + prefix + 'index.html" method="get" role="search">'
     + '<input name="q" type="search" placeholder="Search the docs or paste an error" aria-label="Search the docs"' + (query ? ' value="' + esc(query) + '"' : '') + '>'
     + '</form>'
-    + '<nav class="top-links" aria-label="Elsewhere"><a href="' + REPO + '">GitHub</a><a href="' + DISCORD + '">Discord</a></nav>'
+    + '<nav class="top-links" aria-label="Elsewhere"><a class="will-it-run" href="' + prefix + 'check.html">Will it run?</a><a href="' + REPO + '">GitHub</a><a href="' + DISCORD + '">Discord</a></nav>'
     + '</header>\n';
 }
 
@@ -125,6 +125,13 @@ function homePage(o) {
     + '<div id="results"></div>'
     + '</section>'
     + '<div id="home">'
+    + '<a class="promo" href="check.html"><span class="promo-kicker">Before you install</span>'
+    + '<span class="promo-title">Will ODS run on my machine?</span>'
+    + '<span class="promo-text">Pick your system, graphics and memory. See the model ODS would install, how much disk it needs, and anything that would stop it, worked out by ODS\'s own installer code.</span>'
+    + '<span class="promo-cta">Check my machine →</span>'
+    + (o.example ? '<span class="promo-example" aria-hidden="true"><span class="label">For example</span><span class="promo-machine">' + esc(o.example.machine) + '</span>'
+      + '<span class="promo-answer"><span class="promo-tick">✓</span>' + esc(o.example.model) + '</span><span class="promo-meta">' + Math.round(o.example.context / 1024) + 'K context · ' + (o.example.sizeMb / 1024).toFixed(1) + ' GB download</span></span>' : '')
+    + '</a>'
     + '<h2>Common tasks</h2><div id="recipes"></div>'
     + '<h2>Start here by job</h2><div class="prose start">' + o.startHtml + '</div>'
     + '<h2>Browse the manual</h2><p class="muted">' + o.count + ' guides from the ODS repo, in ' + o.groups.length + ' sections.</p><div class="cats">' + browse + '</div>'
@@ -136,4 +143,27 @@ function homePage(o) {
     + '</body>\n</html>\n';
 }
 
-if (typeof module !== 'undefined') module.exports = { docPage, homePage, sourceUrl, reportUrl, neighbours, toc };
+function checkPage(o) {
+  // o: { groups, build }
+  const prefix = '';
+  return head('Will ODS run on my machine? · ODS Docs', 'Find out what ODS would install on your computer, and what it needs, before you download anything.', prefix)
+    + '<body class="check">\n' + topBar(prefix, '')
+    + '<div class="layout">\n' + sidebar(o.groups, prefix, null)
+    + '<main class="doc">'
+    + '<section class="check-hero"><p class="kicker">Before you install</p><h1>Will ODS run on my machine?</h1>'
+    + '<p class="lead">Answer three questions to see the model ODS would install, the disk space it needs, and anything that would stop it.</p></section>'
+    + '<div class="checker"><form id="check-form" class="check-form" onsubmit="return false"></form><section id="check-result" class="check-result" aria-live="polite"></section></div>'
+    + '<div class="prose check-notes"><h2 id="how-this-works">How this works</h2>'
+    + '<p>Nothing here is guessed. When the site is built, it runs ODS\'s own installer code for every machine on this page: '
+    + '<code>classify-hardware.sh</code> (hardware class and tier), <code>auto_select_tier</code> (macOS), <code>select-model.py</code> (the model) and '
+    + '<code>preflight-engine.sh</code> (memory, disk and platform checks), with the arguments the installers pass. The support status is quoted from the '
+    + '<a href="docs/support-matrix.html">ODS support matrix</a>. Everything comes from <a href="' + REPO + '/tree/' + o.build.sha + '">Osmantic/ODS ' + o.build.sha.slice(0, 7) + '</a>.</p>'
+    + '<p>The real installer measures your hardware directly, so its answer can differ a little: memory other programs are already using, several GPUs, or a model you choose yourself all change the pick. '
+    + 'The model shown is the one for the default setup (Ubuntu 24.04 or Debian 12, Windows with WSL2, or macOS), which uses the largest model that fits.</p></div>'
+    + '</main>\n'
+    + '</div>\n' + footer(o.build) + MENU_SCRIPT
+    + '<script src="checker-data.js"></script>\n<script src="check.js"></script>\n'
+    + '</body>\n</html>\n';
+}
+
+if (typeof module !== 'undefined') module.exports = { checkPage, docPage, homePage, DISCORD, sourceUrl, reportUrl, neighbours, toc };
