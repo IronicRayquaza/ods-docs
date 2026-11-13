@@ -1,0 +1,139 @@
+// HTML for the generated pages: one page per doc, and the home page.
+// Everything here is a pure function of its inputs; build.js writes the files.
+
+const { esc } = require('./markdown.js');
+
+const REPO = 'https://github.com/Osmantic/ODS';
+const DISCORD = 'https://discord.gg/4ntNp9MAwC';
+const SITE_REPO = 'https://github.com/IronicRayquaza/ods-docs';
+
+function sourceUrl(build, path, line) {
+  return REPO + '/blob/' + build.sha + '/' + path + (path.endsWith('.md') ? '?plain=1' : '') + (line ? '#L' + line : '');
+}
+
+function shortDate(iso) {
+  return iso.slice(0, 10);
+}
+
+function head(title, description, prefix) {
+  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+    + '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+    + '<title>' + esc(title) + '</title>\n'
+    + (description ? '<meta name="description" content="' + esc(description) + '">\n' : '')
+    + '<link rel="icon" href="' + prefix + 'ods-logo.png">\n'
+    + '<link rel="stylesheet" href="' + prefix + 'style.css">\n'
+    + '</head>\n';
+}
+
+function topBar(prefix, query) {
+  return '<header class="top">'
+    + '<button class="menu-button" type="button" aria-controls="sidebar" aria-expanded="false">Menu</button>'
+    + '<a class="brand" href="' + prefix + 'index.html"><img src="' + prefix + 'ods-logo.png" alt="" width="39" height="24"><span>ODS Docs</span></a>'
+    + '<form class="top-search" action="' + prefix + 'index.html" method="get" role="search">'
+    + '<input name="q" type="search" placeholder="Search the docs or paste an error" aria-label="Search the docs"' + (query ? ' value="' + esc(query) + '"' : '') + '>'
+    + '</form>'
+    + '<nav class="top-links" aria-label="Elsewhere"><a href="' + REPO + '">GitHub</a><a href="' + DISCORD + '">Discord</a></nav>'
+    + '</header>\n';
+}
+
+function sidebar(groups, prefix, current) {
+  return '<nav class="sidebar" id="sidebar" aria-label="All docs">'
+    + groups.map(g => '<div class="side-group"><p class="side-title">' + esc(g.title) + '</p><ul>'
+      + g.docs.map(d => '<li><a href="' + prefix + 'docs/' + d.slug + '.html"' + (d.slug === current ? ' aria-current="page"' : '') + '>' + esc(d.title) + '</a></li>').join('')
+      + '</ul></div>').join('')
+    + '</nav>\n';
+}
+
+function footer(build) {
+  return '<footer class="site-footer">'
+    + '<p>Built from <a href="' + REPO + '/tree/' + build.sha + '">Osmantic/ODS ' + build.sha.slice(0, 7) + '</a> on ' + shortDate(build.date) + '. '
+    + 'Every page is the ODS documentation as written in that commit; nothing here is generated or rewritten.</p>'
+    + '<p>A community project, not an official Osmantic site. Docs content is Apache-2.0 from <a href="' + REPO + '">Osmantic/ODS</a>. '
+    + '<a href="' + SITE_REPO + '">Site source</a>.</p>'
+    + '</footer>\n';
+}
+
+const MENU_SCRIPT = '<script>(function(){var b=document.querySelector(".menu-button"),s=document.getElementById("sidebar");'
+  + 'if(!b||!s)return;b.addEventListener("click",function(){var o=s.classList.toggle("open");b.setAttribute("aria-expanded",o?"true":"false");});})();</script>\n';
+
+function toc(headings) {
+  const items = headings.filter(h => h.level === 2 || h.level === 3);
+  if (items.length < 2) return '';
+  return '<aside class="toc" aria-label="On this page"><p class="side-title">On this page</p><ul>'
+    + items.map(h => '<li class="toc-' + h.level + '"><a href="#' + esc(h.id) + '">' + esc(h.text) + '</a></li>').join('')
+    + '</ul></aside>\n';
+}
+
+function reportUrl(entry, build) {
+  const title = 'Docs: ' + entry.title;
+  const body = 'Page: ' + entry.path + ' (at ' + build.sha.slice(0, 7) + ')\n\nWhat is wrong or missing:\n\n';
+  return REPO + '/issues/new?title=' + encodeURIComponent(title) + '&body=' + encodeURIComponent(body);
+}
+
+function neighbours(groups, slug) {
+  const flat = [];
+  for (const g of groups) for (const d of g.docs) flat.push(d);
+  const k = flat.findIndex(d => d.slug === slug);
+  return { prev: k > 0 ? flat[k - 1] : null, next: k >= 0 && k < flat.length - 1 ? flat[k + 1] : null };
+}
+
+function docPage(o) {
+  // o: { entry, html, headings, groups, build }
+  const e = o.entry;
+  const prefix = '../';
+  const group = o.groups.find(g => g.id === e.category);
+  const n = neighbours(o.groups, e.slug);
+  const pager = '<nav class="pager" aria-label="Next and previous">'
+    + (n.prev ? '<a class="prev" href="' + n.prev.slug + '.html"><span>Previous</span>' + esc(n.prev.title) + '</a>' : '<span></span>')
+    + (n.next ? '<a class="next" href="' + n.next.slug + '.html"><span>Next</span>' + esc(n.next.title) + '</a>' : '<span></span>')
+    + '</nav>';
+  return head(e.title + ' · ODS Docs', e.description, prefix)
+    + '<body>\n' + topBar(prefix, '')
+    + '<div class="layout">\n' + sidebar(o.groups, prefix, e.slug)
+    + '<main class="doc">'
+    + '<p class="crumbs"><a href="' + prefix + 'index.html#' + esc(e.category) + '">' + esc(group ? group.title : e.category) + '</a></p>'
+    + '<article class="prose">' + o.html + '</article>'
+    + '<div class="doc-meta">'
+    + '<a href="' + sourceUrl(o.build, e.path) + '">View ' + esc(e.path) + ' on GitHub</a>'
+    + '<a href="' + esc(reportUrl(e, o.build)) + '">Report a problem with this page</a>'
+    + '</div>'
+    + pager
+    + '</main>\n' + toc(o.headings)
+    + '</div>\n' + footer(o.build) + MENU_SCRIPT
+    + '</body>\n</html>\n';
+}
+
+function homePage(o) {
+  // o: { groups, build, startHtml, count }
+  const prefix = '';
+  const browse = o.groups.map(g => '<section class="cat" id="' + esc(g.id) + '"><h3>' + esc(g.title) + '</h3><p>' + esc(g.description) + '</p><ul>'
+    + g.docs.map(d => '<li><a href="docs/' + d.slug + '.html">' + esc(d.title) + '</a></li>').join('')
+    + '</ul></section>').join('');
+  return head('ODS Docs: guides and error lookup for ODS', 'Search every ODS guide or paste an ODS error, and read the matching docs, quoted from the Osmantic/ODS repo.', prefix)
+    + '<body class="home">\n' + topBar(prefix, '')
+    + '<div class="layout">\n' + sidebar(o.groups, prefix, null)
+    + '<main class="doc">'
+    + '<section class="hero"><h1>ODS Docs</h1>'
+    + '<p class="lead">Every ODS guide in one place, readable and searchable. Paste an error or a whole install log to find the script that printed it and the docs that fix it.</p>'
+    + '<div class="searchbox">'
+    + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>'
+    + '<textarea id="q" rows="1" placeholder="Search ODS, or paste an error or a whole log" aria-label="Search ODS" autocomplete="off"></textarea>'
+    + '<button id="clear" type="button" aria-label="Clear search" hidden>×</button>'
+    + '</div>'
+    + '<div id="platforms" class="chips" role="group" aria-label="Show results for"></div>'
+    + '<p id="count" aria-live="polite"></p>'
+    + '<div id="results"></div>'
+    + '</section>'
+    + '<div id="home">'
+    + '<h2>Common tasks</h2><div id="recipes"></div>'
+    + '<h2>Start here by job</h2><div class="prose start">' + o.startHtml + '</div>'
+    + '<h2>Browse the manual</h2><p class="muted">' + o.count + ' guides from the ODS repo, in ' + o.groups.length + ' sections.</p><div class="cats">' + browse + '</div>'
+    + '</div>'
+    + '</main>\n'
+    + '</div>\n' + footer(o.build) + MENU_SCRIPT
+    + '<script src="data.js"></script>\n<script src="search.js"></script>\n<script src="platform.js"></script>\n<script src="snippet.js"></script>\n'
+    + '<script src="recipes.js"></script>\n<script src="render.js"></script>\n<script src="logsplit.js"></script>\n<script src="app.js"></script>\n'
+    + '</body>\n</html>\n';
+}
+
+if (typeof module !== 'undefined') module.exports = { docPage, homePage, sourceUrl, reportUrl, neighbours, toc };

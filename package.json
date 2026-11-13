@@ -1,0 +1,10 @@
+{
+  "name": "ods-docs",
+  "private": true,
+  "description": "A readable, searchable docs site for ODS, built from the Osmantic/ODS repo.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "node --test *.test.js",
+    "build": "node build.js ods-source _site"
+  }
+}

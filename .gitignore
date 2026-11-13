@@ -1,0 +1,5 @@
+# A local copy of Osmantic/ODS to build from (see README)
+ods-source/
+# The built site
+_site/
+node_modules/

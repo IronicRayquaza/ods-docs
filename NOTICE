@@ -1,0 +1,26 @@
+ODS Docs
+Copyright 2026 IronicRayquaza
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It started from How to ODS (https://github.com/IronicRayquaza/how-to-ods),
+the ODS Weekly Dev Jam entry. The sections, their order and the short titles
+in categories.js come from Pratham's ODS dashboard docs registry
+(https://github.com/PrathamS1/ODS-Pratham, branch feat/docs-webpage).
+
+The built site contains the documentation and excerpts of scripts from the
+Osmantic/ODS repository (https://github.com/Osmantic/ODS), licensed under the
+Apache License, Version 2.0. Every page names the commit it was built from and
+links back to its source file.
+
+This product includes the Inter font (Copyright 2016 The Inter Project
+Authors) and the JetBrains Mono font (Copyright 2020 The JetBrains Mono
+Project Authors), licensed under the SIL Open Font License, Version 1.1
+(see fonts/OFL.txt).
+
+This product includes the Sora font (Copyright 2019 The Sora Project
+Authors), licensed under the SIL Open Font License, Version 1.1
+(see fonts/SORA-OFL.txt).
+
+ods-logo.png is the ODS mark from the Osmantic/ODS repository. It is not
+covered by this repository's license; all rights remain with its owners.
