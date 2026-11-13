@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { tokenize, search, pickResults } = require('./search.js');
+const { tokenize, search, pickResults, groupErrors, wholeMessageIn } = require('./search.js');
 
 const docs = [
   { file: 'ods/docs/MODEL-MANAGEMENT.md', heading: 'Switching models', line: 10, text: 'Run ods model switch to change the model.' },
@@ -58,7 +58,25 @@ test('no match', () => {
   assert.deepStrictEqual(search(docs, 'zebra', 5), []);
 });
 
-test('pickResults', () => {
-  assert.deepStrictEqual(pickResults(list, 3).map(r => r.chunk.line), [1, 3, 5]);
+test('pickResults keeps every exact error and the top sections', () => {
+  assert.deepStrictEqual(pickResults(list, 2).map(r => r.chunk.line), [1, 2, 3, 5]);
   assert.deepStrictEqual(pickResults(list.slice(2), 5).map(r => r.chunk.line), [3, 5, 6]);
+});
+
+test('groupErrors puts one message printed in several places together', () => {
+  const a = { kind: 'error', heading: 'Error: Docker Desktop is not running.', file: 'ods/installers/macos/ods-macos.sh' };
+  const b = { kind: 'error', heading: 'Error: Docker Desktop is not running.', file: 'ods/installers/windows/ods.ps1' };
+  const c = { kind: 'error', heading: 'Error: Something else broke here.', file: 'ods/ods-cli' };
+  const groups = groupErrors([{ chunk: a }, { chunk: { heading: 'Docs' } }, { chunk: c }, { chunk: b }]);
+  assert.deepStrictEqual(groups.map(g => [g.message, g.chunks.length]), [['Error: Docker Desktop is not running.', 2], ['Error: Something else broke here.', 1]]);
+});
+
+test('wholeMessageIn tells a pasted message from a longer one that contains it', () => {
+  const short = { kind: 'error', heading: 'Error: Docker Desktop is not running.' };
+  const long = { kind: 'error', heading: 'Error: Docker Desktop is not running, so ODS containers cannot be removed safely.' };
+  const drive = { kind: 'error', heading: 'Error: Not enough free space on $drive for the model download.' };
+  assert.ok(wholeMessageIn(short, '[XX] Docker Desktop is not running.'));
+  assert.ok(!wholeMessageIn(long, 'Docker Desktop is not running.'));
+  assert.ok(wholeMessageIn(drive, 'Not enough free space on D: for the model download.'));
+  assert.ok(!wholeMessageIn({ kind: 'error', heading: 'Error: Service $service is not running' }, 'Docker Desktop is not running.'));
 });

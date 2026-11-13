@@ -2,8 +2,24 @@ function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// Markdown as a reader sees it: no fences, emphasis marks, table pipes,
+// heading hashes or link targets.
+function plainText(md) {
+  return md
+    .replace(/^\s*```.*$/gm, ' ')
+    .replace(/^\s*\|?[\s:|-]+\|[\s:|-]*$/gm, ' ')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/<\/?[a-z][^>]*>/gi, ' ')
+    .replace(/^\s{0,3}(#{1,6}|>)\s?/gm, '')
+    .replace(/\*\*|__|`/g, '')
+    .replace(/^\s*\||\|\s*$/gm, '')
+    .replace(/[ \t]*\|[ \t]*/g, ' · ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function makeSnippet(text, terms, size) {
-  const flat = text.replace(/\s+/g, ' ').trim();
+  const flat = plainText(text);
   const lower = flat.toLowerCase();
   let at = -1;
   
@@ -28,9 +44,9 @@ function highlight(html, terms) {
     if (UNSAFE.includes(term)) {
       continue;
     }
-    out = out.replace(new RegExp('(' + term + ')', 'gi'), '<mark>$1</mark>');
+    out = out.replace(new RegExp('\\b(' + term + ')' + (term.length < 4 ? '\\b' : ''), 'gi'), '<mark>$1</mark>');
   }
   return out;
 }
 
-if (typeof module !== 'undefined') module.exports = { escapeHtml, makeSnippet, highlight };
+if (typeof module !== 'undefined') module.exports = { escapeHtml, plainText, makeSnippet, highlight };

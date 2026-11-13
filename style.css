@@ -174,26 +174,35 @@ a { color: var(--accent-text); }
 .cat ul { margin: 0; padding-left: 1.1em; font-size: 14px; max-height: 15.5em; overflow-y: auto; scrollbar-width: thin; }
 .cat li { margin: 3px 0; }
 
-/* Search results */
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
-.card:has(.tag) { border-color: color-mix(in srgb, var(--error) 45%, transparent); }
-.tag { display: block; width: fit-content; color: var(--error); background: var(--error-soft); border: 1px solid color-mix(in srgb, var(--error) 30%, transparent); border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-.card .title { color: var(--accent-text); font-size: 17px; font-weight: 600; text-decoration: none; }
-.card .title:hover { text-decoration: underline; }
-.path { color: var(--faint); font-size: 12px; margin: 4px 0 10px; font-family: var(--mono); overflow-wrap: anywhere; }
-.path a { color: var(--muted); text-decoration: none; }
-.path a:hover { color: var(--accent-text); text-decoration: underline; }
-.snip { margin: 0; color: var(--muted); }
-mark { background: var(--mark); color: inherit; padding: 0 2px; border-radius: 3px; }
-.card summary { color: var(--muted); cursor: pointer; margin-top: 10px; font-size: 13px; }
-.card summary:hover { color: var(--accent-text); }
-.card details[open] > summary { font-size: 0; }
-.card details[open] > summary::marker { font-size: 13px; }
-.card details[open] > summary::after { content: 'Hide the full section'; font-size: 13px; }
-.card pre { white-space: pre-wrap; background: var(--code-bg); border: 1px solid var(--line); padding: 12px; border-radius: 8px; font-size: 12.5px; font-family: var(--mono); overflow-x: auto; }
+/* Search results: cited like a manual cites itself. */
+.hit { padding: 14px 0; border-top: 1px solid var(--line); }
+.hit-title { color: var(--accent-text); font-size: 16px; font-weight: 600; line-height: 1.4; text-decoration: none; }
+.hit-title:hover { text-decoration: underline; text-underline-offset: 3px; }
+.hit-title code { font-size: 0.9em; }
+.hit-guide { margin: 2px 0 6px; color: var(--faint); font-size: 13px; }
+.hit-note { color: var(--accent-text); }
+.hit-note::before { content: '·'; color: var(--faint); margin: 0 6px; }
+.hit-snip { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+#results mark { background: none; color: var(--text); font-weight: 600; padding: 0; }
+.hits-head, .err-head { margin: 28px 0 2px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.err { margin-bottom: 8px; padding: 18px 20px 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.err + .err { margin-top: 12px; }
+.err-from { margin: 0 0 8px; color: var(--faint); font-size: 13px; }
+.err-msg { margin: 0; padding-left: 12px; border-left: 2px solid var(--error); font-family: var(--mono); font-size: 14.5px; line-height: 1.55; color: var(--text); overflow-wrap: anywhere; }
+.err-code { margin: 10px 0 12px; font-size: 13px; }
+.err-code summary { width: fit-content; color: var(--muted); cursor: pointer; font-family: var(--mono); font-size: 12.5px; }
+.err-code summary:hover { color: var(--accent-text); }
+.err-code pre { margin: 10px 0 8px; white-space: pre-wrap; background: var(--code-bg); border: 1px solid var(--line); padding: 12px; border-radius: 8px; font-size: 12.5px; font-family: var(--mono); overflow-x: auto; }
+.err-code a { color: var(--muted); }
+.err-note { margin: 10px 0 0; color: var(--muted); }
+.err-place { margin: 14px 0 0; font-family: var(--mono); font-size: 12.5px; color: var(--text); }
+.err-place:first-child { margin-top: 10px; }
+.err-head { margin-top: 18px; color: var(--text); }
+.err .hit:last-child { padding-bottom: 14px; }
+.err-none { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
 .empty { color: var(--muted); }
-.help { margin-top: 20px; padding: 14px 16px; border: 1px dashed var(--line-2); border-radius: 12px; color: var(--muted); font-size: 14px; }
-.help strong { color: var(--text); }
+.help { margin: 8px 0 0; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+.hit + .help, .err + .help { margin-top: 0; }
 
 .site-footer { max-width: 1400px; margin: 0 auto; padding: 20px 24px 40px; border-top: 1px solid var(--line); color: var(--faint); font-size: 13px; }
 .site-footer p { margin: 0 0 6px; }

@@ -13,6 +13,7 @@ const { execFileSync } = require('child_process');
 const { splitMarkdown } = require('./chunk.js');
 const { shouldInclude, isErrorSource } = require('./include.js');
 const { errorChunks } = require('./errors.js');
+const { citeErrors } = require('./cite.js');
 const { buildCatalog, groupByCategory } = require('./catalog.js');
 const { renderMarkdown } = require('./markdown.js');
 const { docPage, homePage, checkPage, DISCORD } = require('./pages.js');
@@ -137,9 +138,11 @@ function build(root, out, options = {}) {
       }
     }
   }
+  const dangling = citeErrors(chunks);
+  const titles = Object.fromEntries(catalog.map(e => [e.slug, e.title]));
   fs.writeFileSync(path.join(out, 'data.js'),
-    'const DOCS = ' + JSON.stringify(chunks) + ';\nconst BUILD = ' + JSON.stringify(build) + ';\n'
-    + 'if (typeof module !== "undefined") { module.exports = { DOCS, BUILD }; }\n');
+    'const DOCS = ' + JSON.stringify(chunks) + ';\nconst TITLES = ' + JSON.stringify(titles) + ';\nconst BUILD = ' + JSON.stringify(build) + ';\n'
+    + 'if (typeof module !== "undefined") { module.exports = { DOCS, TITLES, BUILD }; }\n');
 
   fs.writeFileSync(path.join(out, 'catalog.json'), JSON.stringify({ source: { repo: 'Osmantic/ODS', sha: build.sha, date: build.date }, categories: groups.map(g => ({ id: g.id, title: g.title, description: g.description })), docs: catalog }, null, 1) + '\n');
 
@@ -154,7 +157,7 @@ function build(root, out, options = {}) {
   for (const f of STATIC) fs.copyFileSync(path.join(__dirname, f), path.join(out, f));
   fs.cpSync(path.join(__dirname, 'fonts'), path.join(out, 'fonts'), { recursive: true });
 
-  return { pages: catalog.length, sections: chunks.length, errors: errorCount, build: build };
+  return { pages: catalog.length, sections: chunks.length, errors: errorCount, cited: chunks.filter(c => c.see).length, dangling: dangling, build: build };
 }
 
 // "Will ODS run on my machine?": ODS's own answers for every machine on the
@@ -192,7 +195,10 @@ if (require.main === module) {
     process.exit(2);
   }
   const r = build(root, out);
-  console.log(r.pages + ' pages and ' + r.sections + ' search sections (' + r.errors + ' error messages) written to ' + out + ' from Osmantic/ODS ' + r.build.sha.slice(0, 7));
+  console.log(r.pages + ' pages and ' + r.sections + ' search sections (' + r.errors + ' error messages, ' + r.cited + ' with a doc that covers them) written to ' + out + ' from Osmantic/ODS ' + r.build.sha.slice(0, 7));
+  // Not a build failure: these are ODS messages that name a doc or heading
+  // the repo doesn't have. Worth reporting upstream.
+  for (const d of r.dangling) console.log('  ' + d.from + ' points at ' + d.ref + ', which is not in the repo');
 }
 
 module.exports = { build, makeResolver, makeTitles, repoTarget, startSection };

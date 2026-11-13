@@ -25,3 +25,13 @@ test('highlight("Switch the model", ["model"]) is "Switch the <mark>model</mark>
 test('highlight("a &lt; b", ["lt"]) is "a &lt; b"', () => {
   assert.strictEqual(highlight('a &lt; b', ['lt']), 'a &lt; b');
 });
+test('plainText reads Markdown the way the page shows it', async () => {
+  const { plainText } = await import('./snippet.js');
+  assert.strictEqual(plainText('**Symptoms:**\n```\nDocker is not running.\n```\nSee [the guide](x.md) and `ods start`.\n| A | B |\n|---|---|\n| one | two |'), 'Symptoms: Docker is not running. See the guide and ods start. A · B one · two');
+});
+
+test('highlight marks whole words, not the inside of other words', () => {
+  assert.strictEqual(highlight('Docker cannot start, not now', ['not']), 'Docker cannot start, <mark>not</mark> now');
+  assert.strictEqual(highlight('re-run when it reports ready', ['re']), '<mark>re</mark>-run when it reports ready');
+  assert.strictEqual(highlight('builders build', ['build']), '<mark>build</mark>ers <mark>build</mark>');
+});

@@ -51,8 +51,20 @@ function showResults(list, terms, label) {
     count.textContent = '';
     return;
   }
-  count.textContent = list.length + ' matching sections from the ODS repo';
-  results.innerHTML = list.map(r => cardHtml(r.chunk, terms, BUILD.sha)).join('') + helpHtml(label);
+  // Errors ODS printed come first, each with the sections that cover it;
+  // every other match is a section of the manual, listed once.
+  const groups = groupErrors(list);
+  const whole = groups.filter(g => wholeMessageIn(g.chunks[0], label));
+  const answers = (whole.length > 0 ? whole : groups).slice(0, 3);
+  const cited = new Set(answers.flatMap(g => g.chunks.flatMap(c => (c.see || []).map(s => DOCS[s.i]))));
+  const hits = list.filter(r => r.chunk.kind !== 'error' && !cited.has(r.chunk));
+  const sections = hits.length + cited.size;
+  count.textContent = sections === 0 ? '' : sections + (sections === 1 ? ' section' : ' sections') + ' in the ODS docs';
+  const more = answers.length > 0 && hits.length > 0 ? '<h2 class="hits-head">' + (cited.size > 0 ? 'More in the docs' : 'Related sections') + '</h2>' : '';
+  results.innerHTML = answers.map(g => answerHtml(g, terms, BUILD.sha, DOCS, TITLES)).join('')
+    + more
+    + hits.map(r => hitHtml(r.chunk, terms, BUILD.sha, TITLES, r.exact ? 'Exact match' : '')).join('')
+    + helpHtml(label);
 }
 
 function runQuery(query) {
