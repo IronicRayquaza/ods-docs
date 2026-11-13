@@ -88,14 +88,20 @@ function errorCardHtml(group, terms, sha) {
 
 const CITED_BY = { ref: 'The error points here', quote: 'Quotes this error' };
 
+const DOC_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>';
+const CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+
 // The guides to read first (topGuides in search.js), each opening at the
-// section that matched best.
+// section that matched best: a grouped list, one row per guide.
 function guidesHtml(guides, sha, titles) {
   if (guides.length === 0) return '';
   return '<section class="guides" aria-labelledby="guides-head"><h2 id="guides-head">Start with these guides</h2><ol>'
-    + guides.map(g => '<li><a href="' + pageFor(g.best, sha) + '"><span class="g-title">' + escapeHtml(titles[g.slug] || g.slug) + '</span>'
-      + '<span class="g-sec">' + headingHtml(sectionTitle(g.best, titles)) + '</span></a>'
-      + (g.cited ? '<span class="g-note">' + CITED_BY[g.cited] + '</span>' : '') + '</li>').join('')
+    + guides.map(g => '<li><a href="' + pageFor(g.best, sha) + '">'
+      + '<span class="g-icon">' + DOC_ICON + '</span>'
+      + '<span class="g-text"><span class="g-title">' + escapeHtml(titles[g.slug] || g.slug) + '</span>'
+      + '<span class="g-sec">' + headingHtml(sectionTitle(g.best, titles))
+      + (g.cited ? '<span class="g-note"> · ' + CITED_BY[g.cited] + '</span>' : '') + '</span></span>'
+      + '<span class="g-chev">' + CHEVRON + '</span></a></li>').join('')
     + '</ol></section>';
 }
 
