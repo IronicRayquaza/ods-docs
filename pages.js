@@ -57,9 +57,55 @@ function footer(build) {
 const MENU_SCRIPT = '<script>(function(){var b=document.querySelector(".menu-button"),s=document.getElementById("sidebar");'
   + 'if(!b||!s)return;b.addEventListener("click",function(){var o=s.classList.toggle("open");b.setAttribute("aria-expanded",o?"true":"false");});})();</script>\n';
 
+const COPY_SCRIPT = '<script>(function(){'
+  + 'var copySvg=\'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>\';'
+  + 'var checkSvg=\'<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>\';'
+  + 'function addCopyButtons(root){'
+  + 'root.querySelectorAll(".prose pre, .card pre").forEach(function(pre){'
+  + 'if(pre.querySelector(".copy-btn"))return;'
+  + 'var btn=document.createElement("button");'
+  + 'btn.type="button";btn.className="copy-btn";btn.setAttribute("aria-label","Copy code");'
+  + 'btn.innerHTML=copySvg+\'<span>Copy</span>\';'
+  + 'btn.addEventListener("click",function(){'
+  + 'var code=pre.querySelector("code");'
+  + 'var text=(code?code.innerText:pre.innerText).trim();'
+  + 'navigator.clipboard.writeText(text).then(function(){'
+  + 'btn.innerHTML=checkSvg+\'<span>Copied!</span>\';btn.classList.add("copied");'
+  + 'setTimeout(function(){btn.innerHTML=copySvg+\'<span>Copy</span>\';btn.classList.remove("copied");},2000);'
+  + '});'
+  + '});'
+  + 'pre.appendChild(btn);'
+  + '});'
+  + '}'
+  + 'addCopyButtons(document);'
+  + 'var res=document.getElementById("results");'
+  + 'if(res){new MutationObserver(function(){addCopyButtons(res);}).observe(res,{childList:true,subtree:true});}'
+  + '})();</script>\n';
+
+const TOC_SPY_SCRIPT = '<script>(function(){'
+  + 'var links=Array.from(document.querySelectorAll(".toc a"));'
+  + 'if(!links.length)return;'
+  + 'var targets=links.map(function(a){'
+  + 'var id=decodeURIComponent(a.getAttribute("href").slice(1));'
+  + 'return{a:a,el:document.getElementById(id)};'
+  + '}).filter(function(t){return t.el;});'
+  + 'if(!targets.length)return;'
+  + 'function spy(){'
+  + 'var top=window.scrollY+110;'
+  + 'var cur=null;'
+  + 'for(var i=0;i<targets.length;i++){'
+  + 'if(targets[i].el.getBoundingClientRect().top+window.scrollY<=top){cur=targets[i].a;}'
+  + '}'
+  + 'links.forEach(function(l){l.classList.remove("active");l.removeAttribute("aria-current");});'
+  + 'if(cur){cur.classList.add("active");cur.setAttribute("aria-current","true");}'
+  + '}'
+  + 'window.addEventListener("scroll",spy,{passive:true});'
+  + 'spy();'
+  + '})();</script>\n';
+
 function toc(headings) {
   const items = headings.filter(h => h.level === 2 || h.level === 3);
-  if (items.length < 2) return '';
+  if (items.length < 2) return '<aside class="toc empty" aria-hidden="true"></aside>\n';
   return '<aside class="toc" aria-label="On this page"><p class="side-title">On this page</p><ul>'
     + items.map(h => '<li class="toc-' + h.level + '"><a href="#' + esc(h.id) + '">' + esc(h.text) + '</a></li>').join('')
     + '</ul></aside>\n';
@@ -100,7 +146,7 @@ function docPage(o) {
     + '</div>'
     + pager
     + '</main>\n' + toc(o.headings)
-    + '</div>\n' + footer(o.build) + MENU_SCRIPT
+    + '</div>\n' + footer(o.build) + MENU_SCRIPT + COPY_SCRIPT + TOC_SPY_SCRIPT
     + '</body>\n</html>\n';
 }
 
@@ -135,7 +181,7 @@ function homePage(o) {
     + '<h2>Browse the manual</h2><p class="muted">' + o.count + ' guides from the ODS repo, in ' + o.groups.length + ' sections.</p><div class="cats">' + browse + '</div>'
     + '</div>'
     + '</main>\n'
-    + '</div>\n' + footer(o.build) + MENU_SCRIPT
+    + '</div>\n' + footer(o.build) + MENU_SCRIPT + COPY_SCRIPT
     + '<script src="data.js"></script>\n<script src="search.js"></script>\n<script src="platform.js"></script>\n<script src="snippet.js"></script>\n'
     + '<script src="recipes.js"></script>\n<script src="render.js"></script>\n<script src="logsplit.js"></script>\n<script src="app.js"></script>\n'
     + '</body>\n</html>\n';
