@@ -73,4 +73,30 @@ function groupErrors(list) {
   }
   return groups;
 }
-if (typeof module !== 'undefined') module.exports = { tokenize, search, pickResults, groupErrors, wholeMessageIn };
+// The guides a search points at, best first. A guide scores its best
+// section plus a quarter of its others, so one with several good sections
+// beats one lucky match; a guide that covers a matched error by name
+// (cited: [{ chunk, by }]) comes before all of them. Each guide opens at
+// its best section, or at the one that covers the error.
+function topGuides(list, cited) {
+  const guides = new Map();
+  const guide = (c) => {
+    if (!guides.has(c.slug)) guides.set(c.slug, { slug: c.slug, best: c, top: -1, sum: 0, cited: '' });
+    return guides.get(c.slug);
+  };
+  for (const r of list) {
+    if (r.chunk.kind === 'error' || !r.chunk.slug) continue;
+    const g = guide(r.chunk);
+    g.sum += r.score;
+    if (r.score > g.top) { g.top = r.score; if (!g.cited) g.best = r.chunk; }
+  }
+  for (const c of cited) {
+    if (!c.chunk.slug) continue;
+    const g = guide(c.chunk);
+    if (!g.cited) { g.cited = c.by; g.best = c.chunk; }
+  }
+  // The doc the message itself sends people to is the fix its author chose.
+  const score = (g) => ({ ref: 2e6, quote: 1e6 }[g.cited] || 0) + Math.max(g.top, 0) + (g.sum - Math.max(g.top, 0)) / 4;
+  return [...guides.values()].sort((a, b) => score(b) - score(a));
+}
+if (typeof module !== 'undefined') module.exports = { tokenize, search, pickResults, groupErrors, wholeMessageIn, topGuides };

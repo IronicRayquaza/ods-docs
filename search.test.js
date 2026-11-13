@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { tokenize, search, pickResults, groupErrors, wholeMessageIn } = require('./search.js');
+const { tokenize, search, pickResults, groupErrors, wholeMessageIn, topGuides } = require('./search.js');
 
 const docs = [
   { file: 'ods/docs/MODEL-MANAGEMENT.md', heading: 'Switching models', line: 10, text: 'Run ods model switch to change the model.' },
@@ -79,4 +79,15 @@ test('wholeMessageIn tells a pasted message from a longer one that contains it',
   assert.ok(!wholeMessageIn(long, 'Docker Desktop is not running.'));
   assert.ok(wholeMessageIn(drive, 'Not enough free space on D: for the model download.'));
   assert.ok(!wholeMessageIn({ kind: 'error', heading: 'Error: Service $service is not running' }, 'Docker Desktop is not running.'));
+});
+
+test('topGuides ranks guides by their sections, and puts a guide that covers the error first', () => {
+  const a1 = { slug: 'a', heading: 'A one' }, a2 = { slug: 'a', heading: 'A two' }, a3 = { slug: 'a', heading: 'A three' };
+  const b1 = { slug: 'b', heading: 'B one' }, c1 = { slug: 'c', heading: 'C one' };
+  const list = [{ chunk: b1, score: 50 }, { chunk: a1, score: 40 }, { chunk: { kind: 'error', heading: 'Error: x' }, score: 99 }, { chunk: { heading: 'no page' }, score: 90 }];
+  assert.deepStrictEqual(topGuides(list, []).map(g => [g.slug, g.best.heading]), [['b', 'B one'], ['a', 'A one']]);
+  const more = list.concat([{ chunk: a2, score: 30 }, { chunk: a3, score: 20 }]);
+  assert.deepStrictEqual(topGuides(more, []).map(g => g.slug), ['a', 'b'], 'several good sections beat one');
+  const cited = topGuides(more, [{ chunk: c1, by: 'ref' }, { chunk: a3, by: 'quote' }]);
+  assert.deepStrictEqual(cited.map(g => [g.slug, g.best.heading, g.cited]), [['c', 'C one', 'ref'], ['a', 'A three', 'quote'], ['b', 'B one', '']]);
 });

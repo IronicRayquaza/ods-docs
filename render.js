@@ -41,54 +41,66 @@ function headingHtml(text) {
   return escapeHtml(text).replace(/`([^`]+)`/g, '<code>$1</code>');
 }
 
-// A section of the manual, cited the way a manual cites itself:
-// the section, the guide it's in, and what it says.
-function hitHtml(chunk, terms, sha, titles, note) {
-  const guide = (chunk.slug && titles[chunk.slug]) || chunk.file.split('/').pop();
-  const heading = chunk.heading === chunk.file ? guide : chunk.heading;
-  return '<article class="hit">'
-    + '<a class="hit-title" href="' + pageFor(chunk, sha) + '">' + headingHtml(heading) + '</a>'
-    + '<p class="hit-guide">' + (heading === guide ? 'Guide' : escapeHtml(guide)) + (note ? '<span class="hit-note">' + escapeHtml(note) + '</span>' : '') + '</p>'
-    + '<p class="hit-snip">' + highlight(escapeHtml(makeSnippet(chunk.text, terms, 240)), terms) + '</p>'
-    + '</article>';
+function guideOf(chunk, titles) {
+  return (chunk.slug && titles[chunk.slug]) || chunk.file.split('/').pop();
 }
 
-const CITED_BY = { ref: 'The message points here', quote: 'Quotes this message' };
+// A section before a guide's first heading has the file name as its
+// heading; show the guide's title instead.
+function sectionTitle(chunk, titles) {
+  return chunk.heading === chunk.file ? guideOf(chunk, titles) : chunk.heading;
+}
+
+// One search result, as How to ODS showed it: the section, where it is in
+// the repo, what it says, and the whole section as written. When the guide
+// has a page on this site, the result also opens that part of it.
+function cardHtml(chunk, terms, sha, titles) {
+  const manual = chunk.slug
+    ? '<a class="in-manual" href="' + pageFor(chunk, sha) + '">Read it in ' + escapeHtml(guideOf(chunk, titles)) + ' →</a>'
+    : '';
+  return '<article class="card">'
+    + '<a class="title" href="' + pageFor(chunk, sha) + '">' + headingHtml(sectionTitle(chunk, titles)) + '</a>'
+    + '<div class="path">' + escapeHtml(chunk.file) + ' · line ' + chunk.line + ' · <a href="' + linkFor(chunk, sha) + '" target="_blank" rel="noopener">View on GitHub ↗</a></div>'
+    + '<p class="snip">' + highlight(escapeHtml(makeSnippet(chunk.text, terms, 220)), terms) + '</p>'
+    + manual
+    + '<details><summary>Show the full section</summary><pre>' + escapeHtml(chunk.text) + '</pre></details>'
+    + '</article>';
+}
 
 function listing(names) {
   return names.length < 2 ? names.join('') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
 }
 
-// One error message ODS prints (group: { message, chunks } from
-// groupErrors): which parts of ODS print it, the code, and what the docs
-// say about it. docs is the whole index, which chunk.see points into.
-function answerHtml(group, terms, sha, docs, titles) {
-  const chunks = group.chunks;
-  const message = group.message.slice(7);
-  const from = listing([...new Set(chunks.map(c => whereFrom(c.file)))]);
-  const place = (c) => escapeHtml(c.file.split('/').pop()) + ', line ' + c.line;
-  const code = chunks.slice(0, 3).map(c => {
-    const parts = c.text.split('\n\n');
-    return (chunks.length > 1 ? '<p class="err-place">' + place(c) + '</p>' : '')
-      + (parts.length === 3 ? '<p class="err-note">' + escapeHtml(parts[1]) + '</p>' : '')
-      + '<pre>' + escapeHtml(parts[parts.length - 1]) + '</pre>'
-      + '<a href="' + linkFor(c, sha) + '" target="_blank" rel="noopener">View on GitHub ↗</a>';
-  }).join('');
-  const see = [];
-  for (const c of chunks) for (const s of c.see || []) if (!see.some(x => x.i === s.i)) see.push(s);
-  const cited = see.map(s => hitHtml(docs[s.i], terms, sha, titles, CITED_BY[s.by])).join('');
-  return '<section class="err" aria-label="Where this error comes from">'
-    + '<p class="err-from">Printed by ' + escapeHtml(from) + '</p>'
-    + '<p class="err-msg">' + escapeHtml(message) + '</p>'
-    + '<details class="err-code"><summary>' + (chunks.length > 1 ? chunks.length + ' places in the code' : place(chunks[0])) + '</summary>' + code + '</details>'
-    + (cited
-      ? '<h2 class="err-head">What the docs say</h2>' + cited
-      : '<p class="err-none">No ODS guide covers this message by name yet. The closest sections are below.</p>')
-    + '</section>';
+// An error message ODS prints (group: { message, chunks } from
+// groupErrors), with every place that prints it.
+function errorCardHtml(group, terms, sha) {
+  const first = group.chunks[0];
+  const others = group.chunks.slice(1, 4).map(c => '<a href="' + linkFor(c, sha) + '" target="_blank" rel="noopener">' + escapeHtml(c.file.split('/').pop()) + ' line ' + c.line + ' ↗</a>');
+  return '<article class="card card-error">'
+    + '<div class="tag">Where this error comes from</div>'
+    + '<a class="title" href="' + linkFor(first, sha) + '" target="_blank" rel="noopener">' + highlight(escapeHtml(group.message), terms) + '</a>'
+    + '<div class="path">' + escapeHtml(first.file) + ' · line ' + first.line + ' · <a href="' + linkFor(first, sha) + '" target="_blank" rel="noopener">View on GitHub ↗</a></div>'
+    + '<p class="err-by">Printed by ' + escapeHtml(listing([...new Set(group.chunks.map(c => whereFrom(c.file)))])) + '.'
+    + (others.length > 0 ? ' Also at ' + others.join(', ') + '.' : '') + '</p>'
+    + '<details><summary>Show the full section</summary><pre>' + escapeHtml(first.text) + '</pre></details>'
+    + '</article>';
+}
+
+const CITED_BY = { ref: 'The error points here', quote: 'Quotes this error' };
+
+// The guides to read first (topGuides in search.js), each opening at the
+// section that matched best.
+function guidesHtml(guides, sha, titles) {
+  if (guides.length === 0) return '';
+  return '<section class="guides" aria-labelledby="guides-head"><h2 id="guides-head">Start with these guides</h2><ol>'
+    + guides.map(g => '<li><a href="' + pageFor(g.best, sha) + '"><span class="g-title">' + escapeHtml(titles[g.slug] || g.slug) + '</span>'
+      + '<span class="g-sec">' + headingHtml(sectionTitle(g.best, titles)) + '</span></a>'
+      + (g.cited ? '<span class="g-note">' + CITED_BY[g.cited] + '</span>' : '') + '</li>').join('')
+    + '</ol></section>';
 }
 
 function emptyHtml(query) {
-  return '<p class="empty">Nothing in the ODS docs matches "' + escapeHtml(query) + '". Try fewer or different words.</p>';
+  return '<p class="empty">Nothing in the ODS repo matches "' + escapeHtml(query) + '". Try fewer or different words.</p>';
 }
 
 const ISSUES = 'https://github.com/Osmantic/ODS/issues/new?template=bug_report.yml';
@@ -100,9 +112,9 @@ function issueLink(query) {
 }
 
 function helpHtml(query) {
-  return '<p class="help">Didn\'t find your fix? '
+  return '<div class="help"><strong>Did not find your fix?</strong> '
     + '<a href="' + escapeHtml(issueLink(query)) + '" target="_blank" rel="noopener">Report it on GitHub</a> (what you typed is filled in for you) or '
-    + '<a href="' + DISCORD + '" target="_blank" rel="noopener">ask on the ODS Discord</a>.</p>';
+    + '<a href="' + DISCORD + '" target="_blank" rel="noopener">ask on the ODS Discord</a>.</div>';
 }
 
-if (typeof module !== 'undefined') module.exports = { linkFor, pageFor, whereFrom, hitHtml, answerHtml, emptyHtml, issueLink, helpHtml };
+if (typeof module !== 'undefined') module.exports = { linkFor, pageFor, whereFrom, cardHtml, errorCardHtml, guidesHtml, emptyHtml, issueLink, helpHtml };

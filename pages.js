@@ -40,7 +40,7 @@ function topBar(prefix, query) {
 function sidebar(groups, prefix, current) {
   return '<nav class="sidebar" id="sidebar" aria-label="All docs">'
     + groups.map(g => '<div class="side-group"><p class="side-title">' + esc(g.title) + '</p><ul>'
-      + g.docs.map(d => '<li><a href="' + prefix + 'docs/' + d.slug + '.html"' + (d.slug === current ? ' aria-current="page"' : '') + '>' + esc(d.title) + '</a></li>').join('')
+      + g.docs.map(d => '<li><a href="' + prefix + 'docs/' + d.slug + '.html" data-slug="' + d.slug + '"' + (d.slug === current ? ' aria-current="page"' : '') + '>' + esc(d.title) + '</a></li>').join('')
       + '</ul></div>').join('')
     + '</nav>\n';
 }

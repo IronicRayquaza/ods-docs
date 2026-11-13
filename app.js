@@ -44,26 +44,46 @@ function showChips() {
   }
 }
 
+// Guides that match the search turn purple in the sidebar, and the top
+// three are highlighted; each opens at its best section while searching.
+const sideLinks = Array.from(document.querySelectorAll('.sidebar a[data-slug]'));
+for (const a of sideLinks) a.dataset.page = a.getAttribute('href');
+
+function markSidebar(guides) {
+  const at = new Map(guides.map((g, i) => [g.slug, { rank: i, href: pageFor(g.best, BUILD.sha) }]));
+  let first = null;
+  for (const a of sideLinks) {
+    const hit = at.get(a.dataset.slug);
+    a.classList.toggle('match', !!hit);
+    a.classList.toggle('best', !!hit && hit.rank < 3);
+    a.setAttribute('href', hit ? hit.href : a.dataset.page);
+    if (hit && hit.rank === 0) first = a;
+  }
+  const side = document.getElementById('sidebar');
+  if (first && side) side.scrollTop = Math.max(0, first.offsetTop - side.clientHeight / 3);
+}
+
 function showResults(list, terms, label) {
   homeBox.hidden = true;
   if (list.length === 0) {
     results.innerHTML = emptyHtml(label) + helpHtml(label);
     count.textContent = '';
+    markSidebar([]);
     return;
   }
-  // Errors ODS printed come first, each with the sections that cover it;
-  // every other match is a section of the manual, listed once.
+  // An error ODS printed: every place that prints it, as one card. When a
+  // guide names or quotes that message, it goes first in the guides list.
   const groups = groupErrors(list);
   const whole = groups.filter(g => wholeMessageIn(g.chunks[0], label));
-  const answers = (whole.length > 0 ? whole : groups).slice(0, 3);
-  const cited = new Set(answers.flatMap(g => g.chunks.flatMap(c => (c.see || []).map(s => DOCS[s.i]))));
-  const hits = list.filter(r => r.chunk.kind !== 'error' && !cited.has(r.chunk));
-  const sections = hits.length + cited.size;
-  count.textContent = sections === 0 ? '' : sections + (sections === 1 ? ' section' : ' sections') + ' in the ODS docs';
-  const more = answers.length > 0 && hits.length > 0 ? '<h2 class="hits-head">' + (cited.size > 0 ? 'More in the docs' : 'Related sections') + '</h2>' : '';
-  results.innerHTML = answers.map(g => answerHtml(g, terms, BUILD.sha, DOCS, TITLES)).join('')
-    + more
-    + hits.map(r => hitHtml(r.chunk, terms, BUILD.sha, TITLES, r.exact ? 'Exact match' : '')).join('')
+  const errors = (whole.length > 0 ? whole : groups).slice(0, 3);
+  const cited = errors.flatMap(g => g.chunks.flatMap(c => (c.see || []).map(s => ({ chunk: DOCS[s.i], by: s.by }))));
+  const sections = list.filter(r => r.chunk.kind !== 'error');
+  const guides = topGuides(sections, cited);
+  markSidebar(guides);
+  count.textContent = sections.length + ' matching sections from the ODS repo';
+  results.innerHTML = guidesHtml(guides.slice(0, 3), BUILD.sha, TITLES)
+    + errors.map(g => errorCardHtml(g, terms, BUILD.sha)).join('')
+    + sections.map(r => cardHtml(r.chunk, terms, BUILD.sha, TITLES)).join('')
     + helpHtml(label);
 }
 
@@ -71,6 +91,7 @@ function runQuery(query) {
   const q = query.trim();
   history.replaceState(null, '', q ? '?q=' + encodeURIComponent(q) : location.pathname);
   if (!q) {
+    markSidebar([]);
     results.innerHTML = '';
     count.textContent = '';
     homeBox.hidden = false;
