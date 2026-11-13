@@ -189,12 +189,15 @@ function writeChecker(root, out, build, groups, slugs, read, catalog) {
 }
 
 if (require.main === module) {
-  const [root, out] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const noChecker = args.includes('--no-checker') || process.env.NO_CHECKER === '1';
+  const positional = args.filter(a => !a.startsWith('--'));
+  const [root, out] = positional;
   if (!root || !out) {
-    console.error('Usage: node build.js <ods-checkout> <out-dir>');
+    console.error('Usage: node build.js <ods-checkout> <out-dir> [--no-checker]');
     process.exit(2);
   }
-  const r = build(root, out);
+  const r = build(root, out, { checker: !noChecker });
   console.log(r.pages + ' pages and ' + r.sections + ' search sections (' + r.errors + ' error messages, ' + r.cited + ' with a doc that covers them) written to ' + out + ' from Osmantic/ODS ' + r.build.sha.slice(0, 7));
   // Not a build failure: these are ODS messages that name a doc or heading
   // the repo doesn't have. Worth reporting upstream.
