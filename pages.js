@@ -105,7 +105,7 @@ const TOC_SPY_SCRIPT = '<script>(function(){'
 
 function toc(headings) {
   const items = headings.filter(h => h.level === 2 || h.level === 3);
-  if (items.length < 2) return '';
+  if (items.length < 2) return '<aside class="toc empty" aria-hidden="true"></aside>\n';
   return '<aside class="toc" aria-label="On this page"><p class="side-title">On this page</p><ul>'
     + items.map(h => '<li class="toc-' + h.level + '"><a href="#' + esc(h.id) + '">' + esc(h.text) + '</a></li>').join('')
     + '</ul></aside>\n';
