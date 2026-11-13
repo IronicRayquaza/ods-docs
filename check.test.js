@@ -37,7 +37,7 @@ test('disk need is the larger of the tier minimum and the model plus 15 GB', () 
 test('too little disk is a fixable stop, not a no', () => {
   const r = assess(data, { os: 'linux', kind: 'nvidia', mem: 8, ram: 16, disk: 20 });
   assert.strictEqual(r.level, 'caution');
-  assert.strictEqual(r.headline, 'Yes, once you free up disk space');
+  assert.strictEqual(r.headline, 'Yes, once you free up disk space.');
 });
 
 test('no disk entered shows what is needed', () => {
@@ -48,7 +48,7 @@ test('no disk entered shows what is needed', () => {
 test('low RAM and experimental support are caveats', () => {
   assert.strictEqual(assess(data, { os: 'linux', kind: 'cpu', mem: 0, ram: 8, disk: null }).level, 'caution');
   const arc = assess(data, { os: 'linux', kind: 'arc', mem: 8, ram: 16, disk: 100 });
-  assert.strictEqual(arc.headline, 'Experimental on this machine');
+  assert.strictEqual(arc.headline, 'Experimental on this machine.');
   assert.strictEqual(arc.guide, 'intel-arc-guide');
 });
 

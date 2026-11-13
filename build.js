@@ -148,7 +148,7 @@ function build(root, out, options = {}) {
 
   const startText = startSection(read('ods/docs/README.md'));
   const start = renderMarkdown(startText, { resolve: makeResolver('ods/docs/README.md', slugs, build.sha, ''), titleFor: makeTitles('ods/docs/README.md', catalog) });
-  fs.writeFileSync(path.join(out, 'index.html'), homePage({ groups: groups, build: build, startHtml: start.html, count: catalog.length, example: example ? { machine: 'Windows, NVIDIA 8 GB, 16 GB RAM', model: example.model.name, context: example.model.context, sizeMb: example.model.sizeMb } : null }));
+  fs.writeFileSync(path.join(out, 'index.html'), homePage({ groups: groups, build: build, startHtml: start.html, count: catalog.length, example: example ? { machine: 'Windows, NVIDIA 8 GB', model: example.model.name, context: example.model.context, sizeMb: example.model.sizeMb } : null }));
 
 
   for (const f of STATIC) fs.copyFileSync(path.join(__dirname, f), path.join(out, f));
@@ -181,7 +181,7 @@ function writeChecker(root, out, build, groups, slugs, read, catalog) {
   }
   const data = { build: build, discord: DISCORD, oses: OSES, kinds: KINDS, support: support, supportRows: supportRows, computed: computed, results: askOds(root) };
   fs.writeFileSync(path.join(out, 'checker-data.js'), 'const CHECKER = ' + JSON.stringify(data) + ';\nif (typeof module !== "undefined") { module.exports = { CHECKER }; }\n');
-  fs.writeFileSync(path.join(out, 'check.html'), checkPage({ groups: groups, build: build }));
+  fs.writeFileSync(path.join(out, 'check.html'), checkPage({ build: build }));
   return data;
 }
 

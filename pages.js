@@ -125,13 +125,10 @@ function homePage(o) {
     + '<div id="results"></div>'
     + '</section>'
     + '<div id="home">'
-    + '<a class="promo" href="check.html"><span class="promo-kicker">Before you install</span>'
-    + '<span class="promo-title">Will ODS run on my machine?</span>'
-    + '<span class="promo-text">Pick your system, graphics and memory. See the model ODS would install, how much disk it needs, and anything that would stop it, worked out by ODS\'s own installer code.</span>'
-    + '<span class="promo-cta">Check my machine →</span>'
-    + (o.example ? '<span class="promo-example" aria-hidden="true"><span class="label">For example</span><span class="promo-machine">' + esc(o.example.machine) + '</span>'
-      + '<span class="promo-answer"><span class="promo-tick">✓</span>' + esc(o.example.model) + '</span><span class="promo-meta">' + Math.round(o.example.context / 1024) + 'K context · ' + (o.example.sizeMb / 1024).toFixed(1) + ' GB download</span></span>' : '')
-    + '</a>'
+    + '<a class="promo" href="check.html"><span class="promo-body"><span class="promo-title">Will ODS run on my machine?</span>'
+    + '<span class="promo-text">See the model ODS would install on your computer, and the disk it needs, before you download anything.</span></span>'
+    + (o.example ? '<span class="promo-example">' + esc(o.example.machine) + ' → <strong>' + esc(o.example.model) + '</strong></span>' : '')
+    + '<span class="promo-arrow" aria-hidden="true">→</span></a>'
     + '<h2>Common tasks</h2><div id="recipes"></div>'
     + '<h2>Start here by job</h2><div class="prose start">' + o.startHtml + '</div>'
     + '<h2>Browse the manual</h2><p class="muted">' + o.count + ' guides from the ODS repo, in ' + o.groups.length + ' sections.</p><div class="cats">' + browse + '</div>'
@@ -144,24 +141,25 @@ function homePage(o) {
 }
 
 function checkPage(o) {
-  // o: { groups, build }
+  // o: { build }
   const prefix = '';
   return head('Will ODS run on my machine? · ODS Docs', 'Find out what ODS would install on your computer, and what it needs, before you download anything.', prefix)
     + '<body class="check">\n' + topBar(prefix, '')
-    + '<div class="layout">\n' + sidebar(o.groups, prefix, null)
-    + '<main class="doc">'
-    + '<section class="check-hero"><p class="kicker">Before you install</p><h1>Will ODS run on my machine?</h1>'
-    + '<p class="lead">Answer three questions to see the model ODS would install, the disk space it needs, and anything that would stop it.</p></section>'
-    + '<div class="checker"><form id="check-form" class="check-form" onsubmit="return false"></form><section id="check-result" class="check-result" aria-live="polite"></section></div>'
+    + '<main class="check-page">'
+    + '<header class="check-head"><h1>Will ODS run on my machine?</h1>'
+    + '<p>Describe your computer and see what ODS would install on it, worked out by ODS\'s own installer code. <a href="#how-this-works">How this works</a></p></header>'
+    + '<div class="checker"><form id="check-form" class="check-form" onsubmit="return false"></form>'
+    + '<section id="check-result" class="check-result" aria-labelledby="check-verdict"></section></div>'
+    + '<p id="check-status" class="sr-only" aria-live="polite"></p>'
     + '<div class="prose check-notes"><h2 id="how-this-works">How this works</h2>'
-    + '<p>Nothing here is guessed. When the site is built, it runs ODS\'s own installer code for every machine on this page: '
-    + '<code>classify-hardware.sh</code> (hardware class and tier), <code>auto_select_tier</code> (macOS), <code>select-model.py</code> (the model) and '
-    + '<code>preflight-engine.sh</code> (memory, disk and platform checks), with the arguments the installers pass. The support status is quoted from the '
-    + '<a href="docs/support-matrix.html">ODS support matrix</a>. Everything comes from <a href="' + REPO + '/tree/' + o.build.sha + '">Osmantic/ODS ' + o.build.sha.slice(0, 7) + '</a>.</p>'
+    + '<p>Nothing on this page is guessed. When the site is built, it runs ODS\'s own installer code for every machine you can describe here: '
+    + '<code>classify-hardware.sh</code> for the hardware class and tier, <code>auto_select_tier</code> on macOS, <code>select-model.py</code> for the model, and '
+    + '<code>preflight-engine.sh</code> for the memory, disk and platform checks, with the arguments the installers pass. The support status is quoted from the '
+    + '<a href="docs/support-matrix.html">ODS support matrix</a>. All of it comes from <a href="' + REPO + '/tree/' + o.build.sha + '">Osmantic/ODS ' + o.build.sha.slice(0, 7) + '</a>.</p>'
     + '<p>The real installer measures your hardware directly, so its answer can differ a little: memory other programs are already using, several GPUs, or a model you choose yourself all change the pick. '
     + 'The model shown is the one for the default setup (Ubuntu 24.04 or Debian 12, Windows with WSL2, or macOS), which uses the largest model that fits.</p></div>'
     + '</main>\n'
-    + '</div>\n' + footer(o.build) + MENU_SCRIPT
+    + footer(o.build)
     + '<script src="checker-data.js"></script>\n<script src="check.js"></script>\n'
     + '</body>\n</html>\n';
 }
